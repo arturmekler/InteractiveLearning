@@ -31,3 +31,4 @@
 /home/art/Dokumenty/Repos/InteractiveLearning/AsyncProgrammingAPI/obj/Debug/net8.0/AsyncProgrammingAPI.pdb
 /home/art/Dokumenty/Repos/InteractiveLearning/AsyncProgrammingAPI/obj/Debug/net8.0/AsyncProgrammingAPI.genruntimeconfig.cache
 /home/art/Dokumenty/Repos/InteractiveLearning/AsyncProgrammingAPI/obj/Debug/net8.0/ref/AsyncProgrammingAPI.dll
+/home/art/Dokumenty/Repos/InteractiveLearning/AsyncProgrammingAPI/obj/Debug/net8.0/AsyncProgrammingAPI.sourcelink.json
