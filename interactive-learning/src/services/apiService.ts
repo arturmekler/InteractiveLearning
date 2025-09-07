@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from 'axios';
 
-const API_BASE_URL = 'https://localhost:5096/api';
+const API_BASE_URL = 'http://localhost:5096/api';
 
 // Dodaj nowe interfejsy dla AsyncDemo
 export interface ThreadInfo {

@@ -1,8 +1,7 @@
-# AsyncProgrammingAPI/Dockerfile
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
-EXPOSE 5000
-EXPOSE 5001
+EXPOSE 5096
+# Usuń EXPOSE 5001 - nie będziemy używać HTTPS
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
@@ -19,8 +18,8 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# Konfiguracja HTTPS - skopiuj certyfikat developmentu
-ENV ASPNETCORE_URLS=http://+:5000;https://+:5001
+# ZMIANA: Tylko HTTP - bez HTTPS
+ENV ASPNETCORE_URLS=http://+:5096
 ENV ASPNETCORE_ENVIRONMENT=Development
 
 ENTRYPOINT ["dotnet", "AsyncProgrammingAPI.dll"]

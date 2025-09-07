@@ -20,4 +20,4 @@ if [ ! -f ~/.aspnet/https/aspnetapp.pfx ]; then
 fi
 
 # Uruchom z HTTPS
-docker-compose -f docker-compose.https.yml up --build
+docker compose -f docker-compose.yml up --build

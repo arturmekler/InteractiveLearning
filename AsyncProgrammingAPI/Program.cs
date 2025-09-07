@@ -30,7 +30,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("ReactApp");
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 app.UseRouting();              // Po CORS i HTTPS
 app.UseAuthorization();
 app.MapControllers();
