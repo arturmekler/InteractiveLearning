@@ -8,15 +8,15 @@ namespace AsyncProgrammingAPI.Controllers
     [Route("api/[controller]")]
     public class AsyncDemoController : ControllerBase
     {
-        private readonly IAsyncDemonstrationService _asyncService;
-        private readonly ILogger<AsyncDemoController> _logger;
+        private readonly IAsyncDemonstrationService asyncService;
+        private readonly ILogger<AsyncDemoController> logger;
 
         public AsyncDemoController(
             IAsyncDemonstrationService asyncService, 
             ILogger<AsyncDemoController> logger)
         {
-            _asyncService = asyncService;
-            _logger = logger;
+            this.asyncService = asyncService;
+            this.logger = logger;
         }
 
         /// <summary>
@@ -25,9 +25,9 @@ namespace AsyncProgrammingAPI.Controllers
         [HttpGet("thread-info")]
         public async Task<ActionResult<ThreadInfo>> GetThreadInfo()
         {
-            _logger.LogInformation("Demonstracja informacji o wątkach");
+            logger.LogInformation("Demonstracja informacji o wątkach");
             
-            var result = await _asyncService.GetCurrentThreadInfoAsync();
+            var result = await asyncService.GetCurrentThreadInfoAsync();
             return Ok(result);
         }
 
@@ -37,9 +37,9 @@ namespace AsyncProgrammingAPI.Controllers
         [HttpGet("sync-vs-async")]
         public async Task<ActionResult<ComparisonResult>> CompareSyncVsAsync()
         {
-            _logger.LogInformation("Porównanie sync vs async");
+            logger.LogInformation("Porównanie sync vs async");
             
-            var result = await _asyncService.CompareSync_vs_AsyncAsync();
+            var result = await asyncService.CompareSync_vs_AsyncAsync();
             return Ok(result);
         }
 
@@ -49,9 +49,9 @@ namespace AsyncProgrammingAPI.Controllers
         [HttpGet("parallel-tasks")]
         public async Task<ActionResult<ParallelTasksResult>> RunParallelTasks()
         {
-            _logger.LogInformation("Uruchamianie zadań równoległych");
+            logger.LogInformation("Uruchamianie zadań równoległych");
             
-            var result = await _asyncService.RunParallelTasksAsync();
+            var result = await asyncService.RunParallelTasksAsync();
             return Ok(result);
         }
 
@@ -61,9 +61,9 @@ namespace AsyncProgrammingAPI.Controllers
         [HttpGet("task-lifecycle")]
         public async Task<ActionResult<TaskLifecycleResult>> DemonstrateTaskLifecycle()
         {
-            _logger.LogInformation("Demonstracja cyklu życia Task");
+            logger.LogInformation("Demonstracja cyklu życia Task");
             
-            var result = await _asyncService.DemonstrateTaskLifecycleAsync();
+            var result = await asyncService.DemonstrateTaskLifecycleAsync();
             return Ok(result);
         }
 
@@ -73,9 +73,9 @@ namespace AsyncProgrammingAPI.Controllers
         [HttpGet("thread-pool")]
         public async Task<ActionResult<ThreadPoolResult>> DemonstrateThreadPool()
         {
-            _logger.LogInformation("Demonstracja ThreadPool");
+            logger.LogInformation("Demonstracja ThreadPool");
             
-            var result = await _asyncService.DemonstrateThreadPoolAsync();
+            var result = await asyncService.DemonstrateThreadPoolAsync();
             return Ok(result);
         }
 
@@ -85,9 +85,9 @@ namespace AsyncProgrammingAPI.Controllers
         [HttpGet("configure-await")]
         public async Task<ActionResult<ConfigureAwaitResult>> DemonstrateConfigureAwait()
         {
-            _logger.LogInformation("Demonstracja ConfigureAwait");
+            logger.LogInformation("Demonstracja ConfigureAwait");
             
-            var result = await _asyncService.DemonstrateConfigureAwaitAsync();
+            var result = await asyncService.DemonstrateConfigureAwaitAsync();
             return Ok(result);
         }
 
@@ -97,8 +97,8 @@ namespace AsyncProgrammingAPI.Controllers
         [HttpGet("async-stream")]
         public IAsyncEnumerable<StreamItem> GetAsyncStream()
         {
-            _logger.LogInformation("Uruchamianie async stream");
-            return _asyncService.GetAsyncStreamAsync();
+            logger.LogInformation("Uruchamianie async stream");
+            return asyncService.GetAsyncStreamAsync();
         }
 
         /// <summary>
@@ -107,9 +107,9 @@ namespace AsyncProgrammingAPI.Controllers
         [HttpGet("cancellation-demo")]
         public async Task<ActionResult<CancellationResult>> DemonstrateCancellation(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Demonstracja anulowania operacji");
+            logger.LogInformation("Demonstracja anulowania operacji");
             
-            var result = await _asyncService.DemonstrateCancellationAsync(cancellationToken);
+            var result = await asyncService.DemonstrateCancellationAsync(cancellationToken);
             return Ok(result);
         }
 
@@ -119,9 +119,9 @@ namespace AsyncProgrammingAPI.Controllers
         [HttpGet("deadlock-prevention")]
         public async Task<ActionResult<DeadlockDemoResult>> DemonstrateDeadlockPrevention()
         {
-            _logger.LogInformation("Demonstracja zapobiegania deadlockom");
+            logger.LogInformation("Demonstracja zapobiegania deadlockom");
             
-            var result = await _asyncService.DemonstrateDeadlockPreventionAsync();
+            var result = await asyncService.DemonstrateDeadlockPreventionAsync();
             return Ok(result);
         }
 
@@ -131,16 +131,16 @@ namespace AsyncProgrammingAPI.Controllers
         [HttpGet("comprehensive-demo")]
         public async Task<ActionResult<object>> ComprehensiveDemo()
         {
-            _logger.LogInformation("Uruchamianie kompleksowej demonstracji");
+            logger.LogInformation("Uruchamianie kompleksowej demonstracji");
 
             var results = new
             {
-                ThreadInfo = await _asyncService.GetCurrentThreadInfoAsync(),
-                SyncVsAsync = await _asyncService.CompareSync_vs_AsyncAsync(),
-                ParallelTasks = await _asyncService.RunParallelTasksAsync(),
-                TaskLifecycle = await _asyncService.DemonstrateTaskLifecycleAsync(),
-                ConfigureAwait = await _asyncService.DemonstrateConfigureAwaitAsync(),
-                DeadlockPrevention = await _asyncService.DemonstrateDeadlockPreventionAsync(),
+                ThreadInfo = await asyncService.GetCurrentThreadInfoAsync(),
+                SyncVsAsync = await asyncService.CompareSync_vs_AsyncAsync(),
+                ParallelTasks = await asyncService.RunParallelTasksAsync(),
+                TaskLifecycle = await asyncService.DemonstrateTaskLifecycleAsync(),
+                ConfigureAwait = await asyncService.DemonstrateConfigureAwaitAsync(),
+                DeadlockPrevention = await asyncService.DemonstrateDeadlockPreventionAsync(),
                 Summary = new
                 {
                     KeyConcepts = new[]

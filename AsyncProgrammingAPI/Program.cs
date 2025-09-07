@@ -9,6 +9,7 @@ builder.Services.AddSwaggerGen();
 
 // Rejestracja naszego serwisu
 builder.Services.AddScoped<IAsyncDemonstrationService, AsyncDemonstrationService>();
+builder.Services.AddScoped<IAsyncExplanationService, AsyncExplanationService>();
 builder.Services.AddHttpClient();
 
 builder.Services.AddCors(options =>

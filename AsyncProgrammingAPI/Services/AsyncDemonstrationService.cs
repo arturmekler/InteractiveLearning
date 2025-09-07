@@ -87,7 +87,7 @@ namespace AsyncProgrammingAPI.Services
 
             // Czekaj na wszystkie zadania
             var results = await Task.WhenAll(tasks);
-            
+            var task1 = Task.Run(() => Console.WriteLine("cos sie dzieje"));
             stopwatch.Stop();
 
             return new ParallelTasksResult
