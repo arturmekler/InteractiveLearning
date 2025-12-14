@@ -1,6 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using AsyncProgrammingAPI.Services;
 using AsyncProgrammingAPI.Models;
+using System.Diagnostics;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace AsyncProgrammingAPI.Controllers
 {
@@ -165,6 +172,158 @@ namespace AsyncProgrammingAPI.Controllers
             };
 
             return Ok(results);
+        }
+
+        /// <summary>
+        /// Szczegółowe porównanie sync vs async: wszystkie informacje o wątkach, ThreadPool, czasy wykonania, szczegóły zadań
+        /// </summary>
+        [HttpGet("sync-vs-async-detailed")]
+        public async Task<ActionResult<DetailedComparisonResult>> CompareSyncVsAsyncDetailed()
+        {
+            logger.LogInformation("Szczegółowe porównanie sync vs async");
+
+            // zbierz snapshot środowiska przed
+            var before = CaptureThreadPoolSnapshot("before");
+
+            // parametry testu
+            const int operations = 8;
+            const int perOperationMs = 500;
+
+            // SYNCHRONICZNE: wykonanie sekwencyjne w tym samym wątku (blokujące)
+            var syncResult = RunSynchronousWorkload(operations, perOperationMs);
+
+            // zbierz snapshot po sync
+            var afterSync = CaptureThreadPoolSnapshot("afterSync");
+
+            // ASYNCHRONICZNE: uruchomienie równoległych asynchronicznych zadań (Task.Delay)
+            var asyncResult = await RunAsynchronousWorkload(operations, perOperationMs);
+
+            // zbierz snapshot po async
+            var afterAsync = CaptureThreadPoolSnapshot("afterAsync");
+
+            // zbuduj wynik
+            var result = new DetailedComparisonResult
+            {
+                EnvironmentSnapshot = new EnvironmentSnapshot
+                {
+                    ProcessorCount = Environment.ProcessorCount,
+                    ProcessId = Process.GetCurrentProcess().Id,
+                    ThreadCount = Process.GetCurrentProcess().Threads.Count
+                },
+                ThreadPoolBefore = before,
+                ThreadPoolAfterSync = afterSync,
+                ThreadPoolAfterAsync = afterAsync,
+                Synchronous = syncResult,
+                Asynchronous = asyncResult,
+                Summary = new[]
+                {
+                    $"Sync total: {syncResult.TotalElapsed.TotalMilliseconds} ms",
+                    $"Async total (when all awaited): {asyncResult.TotalElapsed.TotalMilliseconds} ms",
+                    $"Observed distinct managed thread IDs (sync): {syncResult.DistinctThreadIds.Count}",
+                    $"Observed distinct managed thread IDs (async): {asyncResult.DistinctThreadIds.Count}"
+                }
+            };
+
+            return Ok(result);
+        }
+
+        // Pomocnicze metody
+        private ThreadPoolSnapshot CaptureThreadPoolSnapshot(string tag)
+        {
+            ThreadPool.GetAvailableThreads(out var workerAvail, out var completionAvail);
+            ThreadPool.GetMaxThreads(out var workerMax, out var completionMax);
+            ThreadPool.GetMinThreads(out var workerMin, out var completionMin);
+
+            return new ThreadPoolSnapshot
+            {
+                Tag = tag,
+                Timestamp = DateTime.UtcNow,
+                WorkerThreadsAvailable = workerAvail,
+                CompletionPortThreadsAvailable = completionAvail,
+                WorkerThreadsMax = workerMax,
+                CompletionPortThreadsMax = completionMax,
+                WorkerThreadsMin = workerMin,
+                CompletionPortThreadsMin = completionMin
+            };
+        }
+
+        private OperationGroupResult RunSynchronousWorkload(int operations, int perOperationMs)
+        {
+            var swGroup = Stopwatch.StartNew();
+            var details = new List<OperationDetail>();
+            var threadIds = new HashSet<int>();
+
+            for (int i = 0; i < operations; i++)
+            {
+                var sw = Stopwatch.StartNew();
+                var startThread = Thread.CurrentThread.ManagedThreadId;
+                threadIds.Add(startThread);
+
+                // blokująca operacja (symulacja I/O lub CPU)
+                Thread.Sleep(perOperationMs);
+
+                sw.Stop();
+                details.Add(new OperationDetail
+                {
+                    Index = i,
+                    StartTimeUtc = DateTime.UtcNow - sw.Elapsed,
+                    EndTimeUtc = DateTime.UtcNow,
+                    Elapsed = sw.Elapsed,
+                    StartThreadId = startThread,
+                    EndThreadId = Thread.CurrentThread.ManagedThreadId,
+                    Notes = "Blocking (Thread.Sleep) executed synchronously"
+                });
+            }
+
+            swGroup.Stop();
+
+            return new OperationGroupResult
+            {
+                Operations = details,
+                TotalElapsed = swGroup.Elapsed,
+                DistinctThreadIds = threadIds.ToList()
+            };
+        }
+
+        private async Task<OperationGroupResult> RunAsynchronousWorkload(int operations, int perOperationMs)
+        {
+            var swGroup = Stopwatch.StartNew();
+            var details = new List<OperationDetail>();
+            var threadIds = new HashSet<int>();
+
+            // Tworzymy zadania równolegle, każde zadanie rejestruje info przed await i po await
+            var tasks = Enumerable.Range(0, operations).Select(async i =>
+            {
+                var opDetail = new OperationDetail { Index = i };
+                var startThread = Thread.CurrentThread.ManagedThreadId;
+                opDetail.StartThreadId = startThread;
+                opDetail.StartTimeUtc = DateTime.UtcNow;
+                lock (threadIds) { threadIds.Add(startThread); }
+
+                var sw = Stopwatch.StartNew();
+                // asynchroniczna, nieblokująca operacja
+                await Task.Delay(perOperationMs).ConfigureAwait(false);
+
+                sw.Stop();
+                opDetail.EndTimeUtc = DateTime.UtcNow;
+                opDetail.Elapsed = sw.Elapsed;
+                opDetail.EndThreadId = Thread.CurrentThread.ManagedThreadId;
+                lock (threadIds) { threadIds.Add(opDetail.EndThreadId); }
+                opDetail.Notes = "Async (Task.Delay)";
+
+                lock (details) { details.Add(opDetail); }
+            }).ToArray();
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+
+            swGroup.Stop();
+
+            return new OperationGroupResult
+            {
+                Operations = details.OrderBy(d => d.Index).ToList(),
+                TotalElapsed = swGroup.Elapsed,
+                DistinctThreadIds = threadIds.ToList()
+            };
         }
     }
 }

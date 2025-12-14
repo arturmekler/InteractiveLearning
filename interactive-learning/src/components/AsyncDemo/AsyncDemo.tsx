@@ -8,6 +8,7 @@ import type {
   ThreadPoolResult,
   ConfigureAwaitResult,
   CancellationResult 
+  , DetailedComparisonResult
 } from '../../services/apiService';
 import LoadingSpinner from '../Common/LoadingSpinner';
 // import './AsyncDemo.css';
@@ -20,6 +21,7 @@ interface DemoState {
   threadPool: ThreadPoolResult | null;
   configureAwait: ConfigureAwaitResult | null;
   cancellation: CancellationResult | null;
+  detailedComparison: DetailedComparisonResult | null;
   loading: Record<string, boolean>;
 }
 
@@ -32,10 +34,11 @@ const AsyncDemo: React.FC = () => {
     threadPool: null,
     configureAwait: null,
     cancellation: null,
+    detailedComparison: null,
     loading: {}
   });
 
-  const [abortController, setAbortController] = useState<AbortController | null>(null);
+  
 
   const setLoading = (key: string, value: boolean) => {
     setState(prev => ({
@@ -74,9 +77,22 @@ const AsyncDemo: React.FC = () => {
       await Promise.all([
         handleThreadInfo(),
         handleSyncVsAsync(),
+        handleDetailedComparison(),
       ]);
     } finally {
       setLoading('comprehensive', false);
+    }
+  };
+
+  const handleDetailedComparison = async () => {
+    setLoading('detailedComparison', true);
+    try {
+      const response = await asyncDemoService.getDetailedComparison();
+      setState(prev => ({ ...prev, detailedComparison: response.data }));
+    } catch (error) {
+      console.error('Detailed comparison error:', error);
+    } finally {
+      setLoading('detailedComparison', false);
     }
   };
 
@@ -147,6 +163,14 @@ const AsyncDemo: React.FC = () => {
           >
             {state.loading.comparison ? <LoadingSpinner /> : 'Porównaj'}
           </button>
+          <button
+            onClick={handleDetailedComparison}
+            disabled={state.loading.detailedComparison}
+            className="demo-button detailed-button"
+            style={{ marginLeft: 12 }}
+          >
+            {state.loading.detailedComparison ? <LoadingSpinner /> : 'Pokaż szczegóły'}
+          </button>
           {state.comparison && (
             <div className="result-display">
               <div className="performance-bars">
@@ -165,6 +189,77 @@ const AsyncDemo: React.FC = () => {
               </div>
               <div className="explanation">
                 💡 {state.comparison.explanation}
+              </div>
+            </div>
+          )}
+
+          {state.detailedComparison && (
+            <div className="result-display detailed-result">
+              <h4>🔎 Szczegółowe porównanie</h4>
+              <div className="env-snapshot">
+                <strong>Environment:</strong>
+                <div>Processors: {state.detailedComparison.environmentSnapshot.processorCount}</div>
+                <div>ProcessId: {state.detailedComparison.environmentSnapshot.processId}</div>
+                <div>ThreadCount: {state.detailedComparison.environmentSnapshot.threadCount}</div>
+              </div>
+
+              <div className="threadpool-snapshots">
+                <strong>ThreadPool (before):</strong>
+                <div>Worker available: {state.detailedComparison.threadPoolBefore.workerThreadsAvailable}</div>
+                <div>Completion available: {state.detailedComparison.threadPoolBefore.completionPortThreadsAvailable}</div>
+                <div>Max worker: {state.detailedComparison.threadPoolBefore.workerThreadsMax}</div>
+                <div>Max completion: {state.detailedComparison.threadPoolBefore.completionPortThreadsMax}</div>
+
+                <strong style={{ marginTop: 8 }}>After Sync:</strong>
+                <div>Worker available: {state.detailedComparison.threadPoolAfterSync.workerThreadsAvailable}</div>
+                <div>Completion available: {state.detailedComparison.threadPoolAfterSync.completionPortThreadsAvailable}</div>
+
+                <strong style={{ marginTop: 8 }}>After Async:</strong>
+                <div>Worker available: {state.detailedComparison.threadPoolAfterAsync.workerThreadsAvailable}</div>
+                <div>Completion available: {state.detailedComparison.threadPoolAfterAsync.completionPortThreadsAvailable}</div>
+              </div>
+
+              <div className="summary-list">
+                <strong>Summary:</strong>
+                <ul>
+                  {state.detailedComparison.summary.map((s, i) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="operations-compare">
+                <div>
+                  <strong>Sync group:</strong>
+                  <div>Total: {state.detailedComparison.synchronous.totalElapsedMs} ms</div>
+                  <div>Distinct threads: {state.detailedComparison.synchronous.distinctThreadIds.length}</div>
+                  <details>
+                    <summary>Operations (sync)</summary>
+                    <ol>
+                      {state.detailedComparison.synchronous.operations.map(op => (
+                        <li key={op.index}>
+                          #{op.index} — {op.elapsedMs}ms — startThread:{op.startThreadId} endThread:{op.endThreadId} — {new Date(op.startTimeUtc).toLocaleTimeString()} → {new Date(op.endTimeUtc).toLocaleTimeString()}
+                        </li>
+                      ))}
+                    </ol>
+                  </details>
+                </div>
+
+                <div style={{ marginTop: 8 }}>
+                  <strong>Async group:</strong>
+                  <div>Total: {state.detailedComparison.asynchronous.totalElapsedMs} ms</div>
+                  <div>Distinct threads: {state.detailedComparison.asynchronous.distinctThreadIds.length}</div>
+                  <details>
+                    <summary>Operations (async)</summary>
+                    <ol>
+                      {state.detailedComparison.asynchronous.operations.map(op => (
+                        <li key={op.index}>
+                          #{op.index} — {op.elapsedMs}ms — startThread:{op.startThreadId} endThread:{op.endThreadId} — {new Date(op.startTimeUtc).toLocaleTimeString()} → {new Date(op.endTimeUtc).toLocaleTimeString()}
+                        </li>
+                      ))}
+                    </ol>
+                  </details>
+                </div>
               </div>
             </div>
           )}

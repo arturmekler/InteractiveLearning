@@ -92,6 +92,50 @@ export interface CancellationResult {
   explanation: string;
 }
 
+// Szczegółowe porównanie sync vs async
+export interface EnvironmentSnapshot {
+  processorCount: number;
+  processId: number;
+  threadCount: number;
+}
+
+export interface ThreadPoolSnapshot {
+  tag: string;
+  timestamp: string;
+  workerThreadsAvailable: number;
+  completionPortThreadsAvailable: number;
+  workerThreadsMax: number;
+  completionPortThreadsMax: number;
+  workerThreadsMin?: number;
+  completionPortThreadsMin?: number;
+}
+
+export interface OperationDetail {
+  index: number;
+  startTimeUtc: string;
+  endTimeUtc: string;
+  elapsedMs: number;
+  startThreadId: number;
+  endThreadId: number;
+  notes: string;
+}
+
+export interface OperationGroupResult {
+  operations: OperationDetail[];
+  totalElapsedMs: number;
+  distinctThreadIds: number[];
+}
+
+export interface DetailedComparisonResult {
+  environmentSnapshot: EnvironmentSnapshot;
+  threadPoolBefore: ThreadPoolSnapshot;
+  threadPoolAfterSync: ThreadPoolSnapshot;
+  threadPoolAfterAsync: ThreadPoolSnapshot;
+  synchronous: OperationGroupResult;
+  asynchronous: OperationGroupResult;
+  summary: string[];
+}
+
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -129,4 +173,6 @@ export const asyncDemoService = {
     apiClient.get('/AsyncDemo/cancellation-demo', { signal }),
   getComprehensiveDemo: (): Promise<AxiosResponse<any>> =>
     apiClient.get('/AsyncDemo/comprehensive-demo'),
+  getDetailedComparison: (): Promise<AxiosResponse<DetailedComparisonResult>> =>
+    apiClient.get('/AsyncDemo/sync-vs-async-detailed'),
 };

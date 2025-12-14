@@ -25,7 +25,7 @@ services:
     build:
       context: ./interactive-learning
       dockerfile: Dockerfile
-    container_name: interactive-learning
+    container_name: interactive-learning-frontend-https
     ports:
       - "3000:3000"
     environment:
